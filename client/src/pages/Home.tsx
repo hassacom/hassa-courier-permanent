@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+import { filterCourierOrders } from "@shared/courier";
 import {
   ArrowLeft,
   Bell,
@@ -232,7 +233,7 @@ function RecentUpdates({ orders, range, setRange, onSelect }: { orders: Order[];
 }
 
 function TaskList({ orders, filter, setFilter, selectedId, onSelect }: { orders: Order[]; filter: Filter; setFilter: (filter: Filter) => void; selectedId: number; onSelect: (order: Order) => void }) {
-  const filtered = useMemo(() => orders.filter((order) => filter === "all" ? true : filter === "active" ? order.status !== "delivered" : order.status === filter), [orders, filter]);
+  const filtered = useMemo(() => filterCourierOrders(orders, filter), [orders, filter]);
   return <section className="panel task-panel">
     <div className="panel-heading"><div><p className="eyebrow terracotta">قائمة المهام</p><h2>الطلبات المسندة</h2></div><button className="refresh-button" aria-label="تحديث الطلبات" title="تحديث الطلبات" onClick={() => toast.success("تم تحديث الطلبات المسندة")}><RefreshCw size={17} /></button></div>
     <div className="filter-tabs" role="tablist">{(Object.keys(filterLabels) as Filter[]).map((key) => <button key={key} role="tab" aria-selected={filter === key} className={filter === key ? "active" : ""} onClick={() => setFilter(key)}>{filterLabels[key]}</button>)}</div>
