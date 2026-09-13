@@ -8,6 +8,13 @@
       "when": 1789197742083,
       "tag": "0000_tiresome_thaddeus_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1789198453767,
+      "tag": "0001_public_talos",
+      "breakpoints": true
     }
   ]
 }

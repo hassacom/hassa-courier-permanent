@@ -8,3 +8,7 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
 };
+
+export function getAdminEmail() {
+  return (process.env.ADMIN_EMAIL ?? "moalj44@gmail.com").trim().toLowerCase();
+}

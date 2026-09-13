@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowLeft, Bike, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -10,6 +11,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
+  const loginMutation = trpc.auth.login.useMutation();
+  const utils = trpc.useUtils();
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -18,11 +21,18 @@ export default function Login() {
       return;
     }
     setLoading(true);
-    window.setTimeout(() => {
-      setLoading(false);
-      toast.success("تم تسجيل الدخول");
-      setLocation("/rider");
-    }, 420);
+    loginMutation.mutate({ email: email.trim(), password, role: "courier" }, {
+      onSuccess: async () => {
+        await utils.auth.me.invalidate();
+        setLoading(false);
+        toast.success("تم تسجيل الدخول");
+        setLocation("/rider");
+      },
+      onError: (error) => {
+        setLoading(false);
+        toast.error(error.message || "تعذر تسجيل الدخول");
+      },
+    });
   };
 
   return <main className="login-page" dir="rtl">
