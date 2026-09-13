@@ -44,6 +44,7 @@ import { ENV, getAdminEmail } from "./_core/env";
 import { appendCoordinatesToAddress, distanceInKm, estimateDeliveryMinutes, extractCoordinatesFromAddress } from "@shared/location";
 import { DELIVERY_SUPPORT_PREFIX, encodeDeliverySupportMessage, isDeliverySupportMessage } from "@shared/deliverySupport";
 import { storagePut } from "./storage";
+import { hashPassword } from "./auth";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let productWithdrawalSchemaPromise: Promise<void> | null = null;
@@ -384,6 +385,23 @@ export async function createEmailUser(input: { email: string; name: string; role
   if (await getUserByEmail(email)) throw new Error("EMAIL_IN_USE");
   await db.insert(users).values({ openId: emailOpenId(email), email, name: input.name.trim(), role: input.role, passwordHash: input.passwordHash, loginMethod: "email", ...(input.verificationTokenHash && input.verificationExpiresAt ? { emailVerificationTokenHash: input.verificationTokenHash, emailVerificationExpiresAt: input.verificationExpiresAt } : {}) });
   return getUserByEmail(email);
+}
+
+/** Ensure the courier account used by the deployed courier portal exists and is active. */
+export async function ensureDemoCourierAccount(email: string, password: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const normalized = normalizeEmail(email);
+  const passwordHash = await hashPassword(password);
+  const existing = await getUserByEmail(normalized);
+  const openId = existing?.openId ?? emailOpenId(normalized);
+  if (existing) {
+    await db.update(users).set({ name: "مندوب هسّا", role: "staff", passwordHash, loginMethod: "email", emailVerifiedAt: existing.emailVerifiedAt ?? new Date() }).where(eq(users.id, existing.id));
+  } else {
+    await db.insert(users).values({ openId, email: normalized, name: "مندوب هسّا", role: "staff", loginMethod: "email", passwordHash, emailVerifiedAt: new Date() });
+  }
+  await db.insert(staffMembers).values({ userOpenId: openId, displayName: "مندوب هسّا", staffType: "courier", status: "active", availability: "available" }).onDuplicateKeyUpdate({ set: { displayName: "مندوب هسّا", staffType: "courier", status: "active" } });
+  return getUserByEmail(normalized);
 }
 
 export async function verifyEmailUser(email: string, tokenHash: string) {
